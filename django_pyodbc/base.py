@@ -31,7 +31,7 @@ except ImportError:
     # import location prior to Django 1.8
     from django.db.backends import BaseDatabaseWrapper, BaseDatabaseFeatures, BaseDatabaseValidation
 from django.db.backends.signals import connection_created
-    
+
 from django.conf import settings
 from django import VERSION as DjangoVersion
 if DjangoVersion[:2] == (1, 9):
@@ -167,7 +167,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         self.introspection = DatabaseIntrospection(self)
         self.validation = BaseDatabaseValidation(self)
         self.connection = None
-        
+
 
     def get_connection_params(self):
         settings_dict = self.settings_dict
@@ -433,7 +433,10 @@ class CursorWrapper(object):
         params = self.format_params(params)
         self.last_params = params
         try:
-            return self.cursor.execute(sql, params)
+            if type(sql) == bytes:
+                return self.cursor.execute(sql.decode(encoding='UTF-8'), params)
+            else:
+                return self.cursor.execute(sql, params)
         except IntegrityError:
             e = sys.exc_info()[1]
             raise utils.IntegrityError(*e.args)
@@ -452,7 +455,10 @@ class CursorWrapper(object):
             params_list = [self.format_params(p) for p in raw_pll]
 
         try:
-            return self.cursor.executemany(sql, params_list)
+            if type(sql) == bytes:
+                return self.cursor.executemany(sql.decode(encoding='UTF-8'), params_list)
+            else:
+                return self.cursor.executemany(sql, params_list)
         except IntegrityError:
             e = sys.exc_info()[1]
             raise utils.IntegrityError(*e.args)

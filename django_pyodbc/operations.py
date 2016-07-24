@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import datetime
 import decimal
 import time
@@ -12,7 +13,7 @@ try:
 except ImportError:
     # import location prior to Django 1.8
     from django.db.backends import BaseDatabaseOperations
-    
+
 
 from django_pyodbc.compat import smart_text, string_types, timezone
 
@@ -30,7 +31,7 @@ class DatabaseOperations(BaseDatabaseOperations):
         self._ss_ver = None
         self._ss_edition = None
         self._is_db2 = None
-        
+
     @property
     def is_db2(self):
         if self._is_db2 is None:
@@ -42,14 +43,14 @@ class DatabaseOperations(BaseDatabaseOperations):
                 self._is_db2 = False
 
         return self._is_db2
-    
+
     @property
     def left_sql_quote(self):
         if self.is_db2:
             return '{'
         else:
             return '['
-    
+
     @property
     def right_sql_quote(self):
         if self.is_db2:
@@ -66,7 +67,7 @@ class DatabaseOperations(BaseDatabaseOperations):
         cur = self.connection.cursor()
         ver_code = None
         if not self.is_db2:
-            cur.execute("SELECT CAST(SERVERPROPERTY('ProductVersion') as varchar)")
+            cur.execute(u"SELECT CAST(SERVERPROPERTY('ProductVersion') as varchar)")
             ver_code = cur.fetchone()[0]
             ver_code = int(ver_code.split('.')[0])
         if ver_code >= 11:
@@ -101,7 +102,7 @@ class DatabaseOperations(BaseDatabaseOperations):
 
     def date_trunc_sql(self, lookup_type, field_name):
         return "DATEADD(%s, DATEDIFF(%s, 0, %s), 0)" % (lookup_type, lookup_type, field_name)
-        
+
     def _switch_tz_offset_sql(self, field_name, tzname):
         """
         Returns the SQL that will convert field_name to UTC from tzname.
@@ -451,16 +452,16 @@ class DatabaseOperations(BaseDatabaseOperations):
     def return_insert_id(self):
         """
         MSSQL implements the RETURNING SQL standard extension differently from
-        the core database backends and this function is essentially a no-op. 
+        the core database backends and this function is essentially a no-op.
         The SQL is altered in the SQLInsertCompiler to add the necessary OUTPUT
         clause.
         """
         if self.connection._DJANGO_VERSION < 15:
-            # This gets around inflexibility of SQLInsertCompiler's need to 
+            # This gets around inflexibility of SQLInsertCompiler's need to
             # append an SQL fragment at the end of the insert query, which also must
             # expect the full quoted table and column name.
             return ('/* %s */', '')
-        
-        # Django #19096 - As of Django 1.5, can return None, None to bypass the 
+
+        # Django #19096 - As of Django 1.5, can return None, None to bypass the
         # core's SQL mangling.
         return (None, None)
